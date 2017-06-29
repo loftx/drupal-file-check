@@ -11,17 +11,13 @@ function file_check_cron() {
 
   if (time() >= variable_get('file_check_next_execution', 0)) {
 
-    $htaccess_required_text = '  RewriteCond %{HTTP_HOST} .
-  RewriteCond %{HTTP_HOST} !^dev\. [NC]
-  RewriteCond %{HTTP_HOST} !^www\. [NC]
-  RewriteRule ^ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    $result = db_select('file_check', 'c')
+    ->fields('c')
+    ->execute();
 
-  RewriteCond %{HTTPS} !on
-  RewriteCond %{HTTP_HOST} .
-  RewriteCond %{HTTP_HOST} ^www\. [NC]
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]';
-
-    _file_check_check('.htaccess', $htaccess_required_text);
+    foreach ($result as $record) {
+      _file_check_check($record->path, $record->text);
+    }
 
     variable_set('file_check_next_execution', time() + $interval);
   }
@@ -45,12 +41,11 @@ function _file_check_check($file_path, $required_text) {
 
     if (time() >= variable_get('file_check_next_email', 0)) {
 
-      $message = "The required text:\n\n--------------------\n\n" . $required_text . "\n\n--------------------\n\nWas not found in the .htaccess file:\n\n--------------------\n\n" . $file_text . "\n\n--------------------\n";
+      $message = "The required text:\n\n--------------------\n\n" . $required_text . "\n\n--------------------\n\nWas not found in the " . $file_path . " file:\n\n--------------------\n\n" . $file_text . "\n\n--------------------\n";
 
       $params = array(
-        'subject' => t('Studential.com - File modification check failed'),
-        //'body' => check_markup(t($message), 3),
-        'body' => t($message),
+        'subject' => variable_get('site_name') . ' - File modification check failed',
+        'body' => $message,
       );
       drupal_mail('file_check', 'admin_alert', variable_get('site_mail', ''), language_default(), $params);
 

@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * @file
+ *   File Check module install/schema hooks.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function file_check_schema() {
+  $schema = array();
+
+  $schema['file_check'] = array(
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'path' => array(
+        'type' => 'varchar',
+        'length' => 2048,
+      ),
+      'text' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function file_check_install() {
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function file_check_uninstall() {
+  // Unset file check variables.
+  variable_del('file_check_interval');
+  variable_del('file_check_email_interval');
+  variable_del('file_check_next_execution');
+  variable_del('file_check_next_email');
+}
