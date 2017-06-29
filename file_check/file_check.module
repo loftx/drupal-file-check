@@ -1,7 +1,5 @@
 <?php
 
-// File must have unix line endings as we're checking across lines
-
 function file_check_cron() {
   $interval = variable_get('file_check_interval', 8 * 60 * 60);
   $email_interval = variable_get('file_check_email_interval', 24 * 60 * 60);
@@ -37,7 +35,7 @@ function _file_check_check($file_path, $required_text) {
   $file_text = file_get_contents(DRUPAL_ROOT . '/' . $file_path);
 
   if (strpos($file_text, $required_text) === FALSE) {
-    watchdog('file_check', 'File modification check did not find the expected text in .htaccess');
+    watchdog('file_check', 'File modification check did not find the expected text in ' . $file_path);
 
     if (time() >= variable_get('file_check_next_email', 0)) {
 
