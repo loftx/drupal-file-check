@@ -1,0 +1,3 @@
+name = File modifications check
+description = Checks for certain changes in Drupal core / module files
+core = 7.x

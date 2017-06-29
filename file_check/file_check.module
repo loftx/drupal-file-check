@@ -1,0 +1,62 @@
+<?php
+
+// File must have unix line endings as we're checking across lines
+
+function file_check_cron() {
+  $interval = variable_get('file_check_interval', 8 * 60 * 60);
+  $email_interval = variable_get('file_check_email_interval', 24 * 60 * 60);
+
+  /*variable_set('file_check_next_execution', 0);
+  variable_set('file_check_next_email', 0);*/
+
+  if (time() >= variable_get('file_check_next_execution', 0)) {
+
+    $htaccess_required_text = '  RewriteCond %{HTTP_HOST} .
+  RewriteCond %{HTTP_HOST} !^dev\. [NC]
+  RewriteCond %{HTTP_HOST} !^www\. [NC]
+  RewriteRule ^ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  RewriteCond %{HTTPS} !on
+  RewriteCond %{HTTP_HOST} .
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]';
+
+    _file_check_check('.htaccess', $htaccess_required_text);
+
+    variable_set('file_check_next_execution', time() + $interval);
+  }
+}
+
+function file_check_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'admin_alert':
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
+
+function _file_check_check($file_path, $required_text) {
+
+  $file_text = file_get_contents(DRUPAL_ROOT . '/' . $file_path);
+
+  if (strpos($file_text, $required_text) === FALSE) {
+    watchdog('file_check', 'File modification check did not find the expected text in .htaccess');
+
+    if (time() >= variable_get('file_check_next_email', 0)) {
+
+      $message = "The required text:\n\n--------------------\n\n" . $required_text . "\n\n--------------------\n\nWas not found in the .htaccess file:\n\n--------------------\n\n" . $file_text . "\n\n--------------------\n";
+
+      $params = array(
+        'subject' => t('Studential.com - File modification check failed'),
+        //'body' => check_markup(t($message), 3),
+        'body' => t($message),
+      );
+      drupal_mail('file_check', 'admin_alert', variable_get('site_mail', ''), language_default(), $params);
+
+      variable_set('file_check_next_email', time() + $email_interval);
+
+    }
+  }
+
+}
